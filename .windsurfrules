@@ -1,0 +1,466 @@
+# Windsurf Development Rules - ONE Reference Architecture
+
+## Project Context
+Cross-platform application using shared Rust handlers architecture. Tuono web app and Tauri desktop app share identical business logic through rust-lib/. Features AI integration with OpenAI compatibility, secure MCP tool execution in microsandbox, and RAG capabilities using PGLite.
+
+## Critical Package Management Rule
+**MANDATORY**: Use `pnpm` exclusively for all package operations
+- Installation: `pnpm install`
+- Adding packages: `pnpm add <package>` or `pnpm add -D <package>`
+- Running scripts: `pnpm run <script>`
+- **NEVER** use `npm` or `yarn` commands
+
+## TypeScript Absolute Requirements
+
+### Forbidden Patterns
+- **ANY type usage**: Never use `any`, `any[]`, or type assertions to `any`
+- **TS directive abuse**: Never use `@ts-ignore`, `@ts-nocheck`, or `@ts-expect-error`
+- **Direct store access**: Components must never access stores directly
+
+### Required Patterns
+- **Strict typing**: All functions must have explicit return types
+- **Interface definitions**: Proper interfaces for all data structures
+- **Hook-based state**: All store interactions through custom hooks only
+
+```typescript
+// ❌ VIOLATIONS - Do not write code like this
+const userData: any = api.getUser();
+const items: any[] = response.data;
+userStore.updateUser(newData); // Direct store access
+
+// ✅ CORRECT - Write code like this
+interface User {
+  id: string;
+  name: string;  
+  email: string;
+  role: 'admin' | 'user' | 'moderator';
+}
+
+interface ApiResponse<T> {
+  data: T;
+  status: 'success' | 'error';
+  message?: string;
+}
+
+const { user, updateUser } = useUser(); // Hook-based access
+const userData: User = api.getUser();
+const response: ApiResponse<User[]> = await api.getUsers();
+```
+
+## Rust Development Standards
+
+### Error Handling Requirements
+- **No unwrap/expect**: Never use `.unwrap()` or `.expect()` in production handlers
+- **Result types**: Always use `Result<T, E>` with custom error types
+- **Error derivation**: Use `thiserror` crate for error definitions
+- **Axum compatibility**: All handlers must return Axum-compatible types
+
+```rust
+// ✅ REQUIRED - Proper error handling pattern
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ApiError {
+    #[error("Database connection failed: {0}")]
+    DatabaseError(#[from] sqlx::Error),
+    #[error("Validation failed for field: {field}")]
+    ValidationError { field: String },
+    #[error("Resource not found: {resource}")]
+    NotFound { resource: String },
+    #[error("MCP tool execution failed: {0}")]
+    McpError(#[from] McpError),
+}
+
+pub async fn get_user_handler(
+    Path(user_id): Path<String>
+) -> Result<AxumJson<User>, StatusCode> {
+    let user = database::fetch_user(&user_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        
+    match user {
+        Some(user) => Ok(AxumJson(user)),
+        None => Err(StatusCode::NOT_FOUND),
+    }
+}
+```
+
+## Shared Handler Architecture - Core Principle
+
+**FUNDAMENTAL RULE**: All business logic must be implemented in the shared Rust library (`rust-lib/src/`) and consumed by both platforms.
+
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Tuono Web     │    │  Tauri Desktop  │
+│   (HTTP/Axum)   │    │   (IPC Calls)   │
+└─────────────────┘    └─────────────────┘
+         │                       │
+         └───────┐       ┌───────┘
+                 ▼       ▼
+    ┌─────────────────────────────────────┐
+    │      Shared Rust Handlers          │
+    │   rust-lib/src/{ai,mcp,rag,lib}    │
+    └─────────────────────────────────────┘
+```
+
+### Implementation Pattern
+```rust
+// ✅ Shared handler in rust-lib/src/lib.rs
+pub async fn api_data_handler() -> Result<AxumJson<ApiResponse>, StatusCode> {
+    log::info!("📊 API data requested from shared handler");
+    
+    let data = ApiResponse {
+        message: "Data from shared handler".to_string(),
+        timestamp: chrono::Utc::now(),
+        source: "Shared Rust Library".to_string(),
+    };
+    
+    Ok(AxumJson(data))
+}
+
+// ✅ Tuono web usage (src/main.rs)
+use shared_handlers;
+Router::new().route("/api/data", get(shared_handlers::api_data_handler))
+
+// ✅ Tauri desktop usage (src-tauri/src/lib.rs)
+#[tauri::command]
+async fn get_api_data() -> Result<serde_json::Value, String> {
+    match shared_handlers::api_data_handler().await {
+        Ok(response) => Ok(response.0), // Extract value from AxumJson
+        Err(_) => Err("Failed to get API data".to_string())
+    }
+}
+```
+
+## React Component Consistency Rules
+
+**MANDATORY**: Both platforms must use identical React components and routing structure.
+
+### Component Requirements
+- Same component files in `src/routes/` used by both platforms
+- Each route component includes complete `RootClientLayout`
+- React Router 7 for both platforms (not Tuono's file-based routing)
+- No platform-specific component variations
+
+```typescript
+// ✅ CORRECT - Route component used by both platforms
+// src/routes/dashboard/index.tsx
+export default function DashboardPage() {
+  return (
+    <RootClientLayout> {/* Always include complete layout */}
+      <div className="dashboard-content">
+        <h1>Dashboard</h1>
+        {/* Dashboard components */}
+      </div>
+    </RootClientLayout>
+  )
+}
+```
+
+## State Management Architecture
+
+**ABSOLUTE RULE**: Components must never access stores directly. All state interactions must go through custom hooks.
+
+```typescript
+// ✅ CORRECT - Hook-based store access
+// hooks/useUser.ts
+export function useUser() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    return userStore.subscribe(() => {
+      setUser(userStore.getUser());
+    });
+  }, []);
+  
+  const updateUser = useCallback(async (updates: Partial<User>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await userStore.updateUser(updates);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Update failed');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  return { user, loading, error, updateUser };
+}
+
+// ✅ Component usage
+function UserProfile() {
+  const { user, loading, updateUser } = useUser();
+  
+  if (loading) return <div>Loading...</div>;
+  return <div>{user?.name}</div>;
+}
+```
+
+## IPC Development Best Practices
+
+### Command Naming Standards
+- **Descriptive names**: Use action-based, descriptive command names
+- **Consistent patterns**: Follow `verb_noun_context` pattern
+- **Examples**: `get_user_profile`, `update_user_settings`, `search_documents`
+
+### IPC Error Handling Pattern
+```rust
+#[derive(serde::Serialize)]
+pub struct IpcError {
+    pub code: String,
+    pub message: String,
+    pub details: Option<serde_json::Value>,
+}
+
+#[tauri::command]
+pub async fn create_user_account(
+    user_data: CreateUserRequest
+) -> Result<UserResponse, IpcError> {
+    // 1. Input validation
+    if user_data.email.trim().is_empty() {
+        return Err(IpcError {
+            code: "VALIDATION_ERROR".to_string(),
+            message: "Email is required".to_string(),
+            details: Some(serde_json::json!({"field": "email"})),
+        });
+    }
+    
+    // 2. Call shared handler
+    match shared_handlers::create_user(user_data).await {
+        Ok(user) => Ok(user),
+        Err(e) => {
+            log::error!("User creation failed: {}", e);
+            Err(IpcError {
+                code: "CREATION_FAILED".to_string(),
+                message: "Failed to create user account".to_string(),
+                details: Some(serde_json::json!({"error": e.to_string()})),
+            })
+        }
+    }
+}
+```
+
+## AI/MCP/RAG Integration Standards
+
+### OpenAI API Compatibility
+**MANDATORY**: All AI endpoints must be fully OpenAI-compatible for assistant-ui and ag-ui integration.
+
+```rust
+// ✅ REQUIRED - OpenAI-compatible response structure
+#[derive(Debug, Serialize)]
+pub struct ChatCompletionResponse {
+    pub id: String,
+    pub object: String,           // Must be "chat.completion"
+    pub created: u64,
+    pub model: String,
+    pub choices: Vec<ChatChoice>,
+    pub usage: Usage,
+}
+
+pub async fn chat_completions_handler(
+    Json(mut request): Json<ChatCompletionRequest>,
+) -> Result<AxumJson<ChatCompletionResponse>, StatusCode> {
+    // 1. Initialize MCP and RAG services
+    crate::mcp::initialize_default_mcp_servers();
+    crate::rag::initialize_rag_service();
+    
+    // 2. Enhance with RAG context
+    let user_query = extract_user_query(&request.messages);
+    if !user_query.is_empty() {
+        let rag_service = crate::rag::get_rag_service();
+        if let Ok(context) = rag_service.retrieve_context(user_query, None).await {
+            rag_service.enhance_messages_with_context(&mut request.messages, &context);
+        }
+    }
+    
+    // 3. Add available MCP tools
+    let mcp_registry = crate::mcp::get_mcp_registry();
+    if request.tools.is_none() {
+        request.tools = Some(mcp_registry.get_available_tools());
+    }
+    
+    // 4. Generate response with tool calling support
+    generate_openai_response(request).await
+}
+```
+
+### MCP Security Requirements
+**CRITICAL**: All MCP tool execution must occur in microsandbox isolation with strict security policies.
+
+```rust
+pub struct SecureMcpRegistry {
+    servers: HashMap<String, McpServerInstance>,
+    vm_pool: VMPool,
+    security_policies: SecurityPolicyManager,
+}
+
+impl SecureMcpRegistry {
+    pub async fn execute_tool_safely(
+        &self, 
+        tool_call: &ToolCall
+    ) -> Result<String, McpError> {
+        // 1. Validate tool exists and is permitted
+        let tool = self.validate_tool_access(&tool_call.function.name)?;
+        
+        // 2. Parse and validate arguments against JSON schema
+        let args = serde_json::from_str(&tool_call.function.arguments)
+            .map_err(|e| McpError::InvalidArguments(e.to_string()))?;
+        self.validate_arguments_against_schema(&tool, &args)?;
+        
+        // 3. Apply security policies based on tool trust level
+        self.security_policies.validate_execution(&tool, &args)?;
+        
+        // 4. Execute in microsandbox with timeout and resource limits
+        let result = tokio::time::timeout(
+            Duration::from_secs(30),
+            self.execute_in_sandbox(&tool, &args)
+        ).await
+        .map_err(|_| McpError::ExecutionTimeout)??;
+        
+        // 5. Sanitize output before returning
+        self.sanitize_tool_output(result)
+    }
+}
+```
+
+### RAG Integration with PGLite
+**REQUIRED**: Client-side document storage and vector search using PGLite.
+
+```rust
+impl RagService {
+    pub async fn retrieve_context(
+        &self,
+        query: &str,
+        user_id: Option<&str>
+    ) -> Result<RagContext, RagError> {
+        // 1. Generate query embedding
+        let query_embedding = self.embedding_service
+            .generate_embedding(query)
+            .await?;
+            
+        // 2. Vector similarity search in PGLite
+        let candidates = self.vector_store
+            .similarity_search(&query_embedding, self.config.max_documents * 2)
+            .await?;
+            
+        // 3. Apply relevance threshold and user permissions
+        let filtered_docs = candidates
+            .into_iter()
+            .filter(|doc| doc.relevance_score >= self.config.relevance_threshold)
+            .filter(|doc| self.check_user_access(doc, user_id))
+            .take(self.config.max_documents)
+            .collect();
+            
+        // 4. Apply token limits
+        let final_docs = self.apply_token_limits(filtered_docs)?;
+        
+        Ok(RagContext {
+            documents: final_docs,
+            query: query.to_string(),
+            total_tokens: self.calculate_context_tokens(&final_docs),
+        })
+    }
+    
+    pub fn enhance_messages_with_context(
+        &self,
+        messages: &mut Vec<ChatMessage>,
+        context: &RagContext
+    ) {
+        if context.documents.is_empty() {
+            return;
+        }
+        
+        let context_message = ChatMessage {
+            role: "system".to_string(),
+            content: Some(self.format_rag_context(context)),
+            tool_calls: None,
+            tool_call_id: None,
+            name: Some("rag_context".to_string()),
+        };
+        
+        // Insert after system messages but before user messages
+        let insert_pos = messages.iter()
+            .position(|msg| msg.role == "user")
+            .unwrap_or(messages.len());
+        messages.insert(insert_pos, context_message);
+    }
+}
+```
+
+## File Organization Standards
+
+### Directory Structure
+```
+├── rust-lib/src/          # Shared Rust handlers (ALL business logic here)
+│   ├── ai.rs             # OpenAI-compatible AI handlers
+│   ├── mcp.rs            # MCP registry and secure tool execution
+│   ├── rag.rs            # RAG service with PGLite integration
+│   └── lib.rs            # Common exports and utility handlers
+├── src/routes/           # React route components (shared by both platforms)
+├── src/tauri-main.tsx    # Tauri-specific React Router entry point
+├── src-tauri/src/        # Tauri IPC wrappers and AI proxy server
+│   ├── lib.rs           # IPC command definitions
+│   └── ai_proxy.rs      # HTTP proxy for AI streaming
+└── .roo/rules/           # Roo Code development rules
+```
+
+### File Naming Conventions
+- **React Components**: `PascalCase.tsx` (e.g., `UserProfile.tsx`, `DashboardLayout.tsx`)
+- **Custom Hooks**: `camelCase.ts` starting with `use` (e.g., `useUser.ts`, `useAuth.ts`)
+- **Type Definitions**: `camelCase.ts` or `types.ts` (e.g., `userTypes.ts`, `apiTypes.ts`)
+- **Constants**: `UPPER_SNAKE_CASE.ts` (e.g., `API_ENDPOINTS.ts`, `CONFIG.ts`)
+- **Rust Modules**: `snake_case.rs` (e.g., `ai.rs`, `mcp.rs`, `rag.rs`)
+
+## Development Workflow
+
+### Required Pre-commit Checks
+**MANDATORY**: All checks must pass before any commit is allowed:
+
+```bash
+# Type checking and linting
+pnpm run lint          # ESLint for TypeScript files
+pnpm run typecheck     # TypeScript compiler check
+pnpm run rust:check    # Cargo check for Rust code
+pnpm run test          # Run complete test suite
+
+# All commands must exit with status 0
+```
+
+### Development Commands
+```bash
+# Web platform development
+pnpm dev               # Start Tuono web server on port 3000
+pnpm build             # Build web application for production
+
+# Desktop platform development  
+pnpm dev:tauri         # Start Tauri desktop development
+pnpm build:tauri       # Build desktop application
+
+# Shared Rust development
+cargo check --manifest-path rust-lib/Cargo.toml
+cargo test --manifest-path rust-lib/Cargo.toml
+```
+
+## Security and Performance Requirements
+
+### Input Validation
+- **API boundaries**: Validate all inputs at REST and IPC boundaries
+- **JSON schemas**: Use JSON schema validation for MCP tool arguments
+- **Sanitization**: Sanitize all outputs from external tools and services
+
+### MCP Tool Security
+- **Microsandbox isolation**: All MCP tools must execute in isolated VMs
+- **Resource limits**: Memory, CPU, and timeout limits on all tool execution
+- **Trust levels**: Apply appropriate security policies based on tool trust level
+- **Audit logging**: Log all tool executions with full context
+
+### Performance Guidelines
+- **Async patterns**: Use proper async/await patterns with structured concurrency
+- **Error propagation**: Use `?` operator for clean error propagation
+- **Memory management**: Prefer owned types at API boundaries, use `Arc<T>` for shared state
+- **Connection pooling**: Implement connection pooling for external services
+
+This architecture ensures complete consistency between web and desktop platforms while maintaining strict security, type safety, and performance standards throughout the application.

@@ -1,0 +1,491 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // ============================================
+    // MAIN APPLICATION CONFIGURATIONS
+    // ============================================
+    
+    {
+      "name": "🚀 Full Stack (Tuono + Rust)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_LOG": "debug",
+        "RUST_BACKTRACE": "1",
+        "NODE_ENV": "development",
+        "DEBUG": "*"
+      },
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "Server running at http://localhost:([0-9]+)",
+        "uriFormat": "http://localhost:%s",
+        "action": "openExternally"
+      }
+    },
+    
+    {
+      "name": "🖥️ Tauri Desktop (Dev)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev:tauri"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_LOG": "debug,tauri=debug",
+        "RUST_BACKTRACE": "full",
+        "TAURI_DEBUG": "1"
+      },
+      "console": "integratedTerminal"
+    },
+    
+    // ============================================
+    // RUST BACKEND CONFIGURATIONS
+    // ============================================
+    
+    {
+      "name": "🦀 Rust Backend (Cargo)",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--bin=one-reference-app"],
+        "filter": {
+          "name": "one-reference-app",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_LOG": "debug,shared_handlers=trace,sandbox=trace",
+        "RUST_BACKTRACE": "full",
+        "DATABASE_URL": "postgresql://postgres:postgres@localhost/codeinterpreter",
+        "REDIS_URL": "redis://localhost:6379"
+      }
+    },
+    
+    {
+      "name": "🦀 Rust Sandbox Core",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--package=sandbox", "--bin=sandbox"],
+        "filter": {
+          "name": "sandbox",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}/crates/sandbox",
+      "env": {
+        "RUST_LOG": "trace",
+        "RUST_BACKTRACE": "full",
+        "WASMTIME_BACKTRACE_DETAILS": "1"
+      }
+    },
+    
+    {
+      "name": "🦀 Shared Handlers (Tests)",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["test", "--package=shared-handlers", "--no-fail-fast"],
+        "filter": {
+          "name": "shared-handlers",
+          "kind": "lib"
+        }
+      },
+      "cwd": "${workspaceFolder}/rust-lib",
+      "env": {
+        "RUST_LOG": "debug",
+        "RUST_BACKTRACE": "1",
+        "CARGO_TERM_COLOR": "always"
+      }
+    },
+    
+    // ============================================
+    // TYPESCRIPT/NODE CONFIGURATIONS
+    // ============================================
+    
+    {
+      "name": "📦 Orchestrator Service",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@code-interpreter/orchestrator", "dev"],
+      "cwd": "${workspaceFolder}/packages/orchestrator",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "orchestrator:*",
+        "LOG_LEVEL": "debug"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    
+    {
+      "name": "🌐 OpenAI API Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@code-interpreter/api-openai", "dev"],
+      "cwd": "${workspaceFolder}/packages/api-openai",
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": "8787",
+        "DEBUG": "api:*",
+        "LOG_LEVEL": "debug",
+        "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
+        "GROQ_API_KEY": "${env:GROQ_API_KEY}"
+      },
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "listening on :([0-9]+)",
+        "uriFormat": "http://localhost:%s/v1/models",
+        "action": "openExternally"
+      }
+    },
+    
+    {
+      "name": "🔌 MCP HTTP Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@code-interpreter/mcp-http", "dev"],
+      "cwd": "${workspaceFolder}/packages/mcp-http",
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": "8788",
+        "DEBUG": "mcp:*",
+        "LOG_LEVEL": "debug"
+      },
+      "console": "integratedTerminal"
+    },
+    
+    {
+      "name": "🤖 Mastra Agent",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@code-interpreter/agent", "dev"],
+      "cwd": "${workspaceFolder}/packages/agent",
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "mastra:*,agent:*",
+        "LOG_LEVEL": "debug"
+      },
+      "console": "integratedTerminal"
+    },
+    
+    // ============================================
+    // FRONTEND DEBUGGING
+    // ============================================
+    
+    {
+      "name": "⚛️ React Frontend (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack:///./*": "${workspaceFolder}/*",
+        "webpack:///*": "*"
+      },
+      "preLaunchTask": "Start Dev Server",
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-profile"
+    },
+    
+    {
+      "name": "⚛️ React Frontend (Edge)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack:///./*": "${workspaceFolder}/*",
+        "webpack:///*": "*"
+      }
+    },
+    
+    // ============================================
+    // WASM DEBUGGING
+    // ============================================
+    
+    {
+      "name": "🕸️ WASM Module (wasmtime)",
+      "type": "lldb",
+      "request": "launch",
+      "program": "wasmtime",
+      "args": [
+        "run",
+        "--debug-info",
+        "--dir=.",
+        "${workspaceFolder}/wasm/quickjs.wasm",
+        "--",
+        "${input:wasmScript}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "WASMTIME_BACKTRACE_DETAILS": "1",
+        "RUST_LOG": "wasmtime=debug"
+      }
+    },
+    
+    // ============================================
+    // DATABASE & SERVICES
+    // ============================================
+    
+    {
+      "name": "🐘 PostgreSQL (Docker)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "docker-compose",
+      "runtimeArgs": ["up", "postgres"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "POSTGRES_DB": "codeinterpreter",
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "postgres"
+      }
+    },
+    
+    {
+      "name": "🔴 Redis (Docker)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "docker-compose",
+      "runtimeArgs": ["up", "redis"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    
+    {
+      "name": "🌐 IPFS (Docker)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "docker-compose",
+      "runtimeArgs": ["up", "ipfs"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    
+    // ============================================
+    // TESTING CONFIGURATIONS
+    // ============================================
+    
+    {
+      "name": "🧪 Jest Tests (Current File)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "test",
+        "--",
+        "--runInBand",
+        "--no-cache",
+        "--watchAll=false",
+        "${fileBasenameNoExtension}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "env": {
+        "NODE_ENV": "test",
+        "DEBUG": "*"
+      }
+    },
+    
+    {
+      "name": "🧪 Rust Tests (Current Package)",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["test", "--no-fail-fast"],
+        "filter": {
+          "kind": "lib"
+        }
+      },
+      "cwd": "${fileDirname}",
+      "env": {
+        "RUST_LOG": "debug",
+        "RUST_BACKTRACE": "1"
+      }
+    },
+    
+    // ============================================
+    // UTILITY CONFIGURATIONS
+    // ============================================
+    
+    {
+      "name": "🔍 Attach to Process",
+      "type": "node",
+      "request": "attach",
+      "processId": "${command:PickProcess}",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    
+    {
+      "name": "🔍 Attach to Rust Process",
+      "type": "lldb",
+      "request": "attach",
+      "pid": "${command:pickProcess}"
+    },
+    
+    {
+      "name": "📝 Debug Current TypeScript File",
+      "type": "node",
+      "request": "launch",
+      "program": "${file}",
+      "runtimeExecutable": "tsx",
+      "skipFiles": ["<node_internals>/**"],
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "*"
+      }
+    },
+    
+    {
+      "name": "📝 Debug Current Rust File",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["run", "--bin", "${fileBasenameNoExtension}"]
+      },
+      "cwd": "${fileDirname}",
+      "env": {
+        "RUST_LOG": "trace",
+        "RUST_BACKTRACE": "full"
+      }
+    },
+    
+    // ============================================
+    // PERFORMANCE PROFILING
+    // ============================================
+    
+    {
+      "name": "📊 Profile Rust (Perf)",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--release", "--bin=one-reference-app"],
+        "filter": {
+          "name": "one-reference-app",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "CARGO_PROFILE_RELEASE_DEBUG": "true",
+        "RUST_LOG": "info"
+      },
+      "postRunCommands": [
+        "perf record -F 99 -g ${command:pickProcess}"
+      ]
+    },
+    
+    {
+      "name": "📊 Profile Node (Chrome DevTools)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "NODE_OPTIONS": "--inspect-brk"
+      },
+      "console": "integratedTerminal"
+    },
+    
+    // ============================================
+    // MIGRATION & DATABASE TOOLS
+    // ============================================
+    
+    {
+      "name": "🔄 Run Migrations",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["migrate:up"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "DATABASE_URL": "postgresql://postgres:postgres@localhost/codeinterpreter"
+      },
+      "console": "integratedTerminal"
+    },
+    
+    {
+      "name": "🔄 Rollback Migrations",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["migrate:down"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "DATABASE_URL": "postgresql://postgres:postgres@localhost/codeinterpreter"
+      },
+      "console": "integratedTerminal"
+    }
+  ],
+  
+  "compounds": [
+    {
+      "name": "🚀 Full Stack + Services",
+      "configurations": [
+        "🐘 PostgreSQL (Docker)",
+        "🔴 Redis (Docker)",
+        "🌐 IPFS (Docker)",
+        "🚀 Full Stack (Tuono + Rust)"
+      ],
+      "stopAll": true
+    },
+    
+    {
+      "name": "🔧 Code Interpreter Stack",
+      "configurations": [
+        "🦀 Rust Sandbox Core",
+        "📦 Orchestrator Service",
+        "🌐 OpenAI API Server",
+        "🔌 MCP HTTP Server"
+      ],
+      "stopAll": true
+    },
+    
+    {
+      "name": "🖥️ Tauri + Backend Services",
+      "configurations": [
+        "🐘 PostgreSQL (Docker)",
+        "🔴 Redis (Docker)",
+        "🦀 Rust Backend (Cargo)",
+        "🖥️ Tauri Desktop (Dev)"
+      ],
+      "stopAll": true
+    },
+    
+    {
+      "name": "🧪 Test Everything",
+      "configurations": [
+        "🧪 Rust Tests (Current Package)",
+        "🧪 Jest Tests (Current File)"
+      ],
+      "stopAll": true
+    }
+  ],
+  
+  "inputs": [
+    {
+      "id": "wasmScript",
+      "type": "promptString",
+      "description": "Path to the WASM script to debug",
+      "default": "test.js"
+    }
+  ]
+}

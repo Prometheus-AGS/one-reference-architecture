@@ -1,0 +1,267 @@
+# Cline Development Rules - ONE Reference Architecture
+
+## Project Overview
+Cross-platform application with shared Rust handlers between Tuono web and Tauri desktop platforms. Features OpenAI-compatible AI integration, secure MCP tool calling, and RAG capabilities using PGLite.
+
+## Package Management - MANDATORY
+- Use `pnpm` exclusively - NEVER use `npm` or `yarn`
+- Commands: `pnpm install`, `pnpm add <package>`, `pnpm run <script>`
+- Respect pnpm workspace structure in `pnpm-workspace.yaml`
+
+## TypeScript - Absolute Prohibitions
+- FORBIDDEN: `any` type (implicit or explicit)
+- FORBIDDEN: `any[]`, `@ts-ignore`, `@ts-nocheck`  
+- FORBIDDEN: Direct store access in components
+- REQUIRED: Strict type checking, explicit return types
+- REQUIRED: Hook-based store access only
+
+```typescript
+// ❌ FORBIDDEN
+const user = userStore.getUser();
+const data: any = response.data;
+
+// ✅ REQUIRED
+const { user } = useUser();
+interface ResponseData { items: Item[]; }
+const data: ResponseData = response.data;
+```
+
+## Rust Standards
+- FORBIDDEN: `.unwrap()` or `.expect()` in production handlers
+- REQUIRED: `Result<T, E>` with custom error types using `thiserror`
+- REQUIRED: All handlers return Axum-compatible types
+- REQUIRED: Structured logging with context
+
+```rust
+// ✅ REQUIRED Pattern
+#[derive(thiserror::Error, Debug)]
+pub enum ApiError {
+    #[error("Database error: {0}")]
+    Database(#[from] sqlx::Error),
+    #[error("Not found: {resource}")]
+    NotFound { resource: String },
+}
+
+pub async fn get_user(id: &str) -> Result<User, ApiError> {
+    let user = database::fetch_user(id).await?;
+    user.ok_or_else(|| ApiError::NotFound { 
+        resource: "user".to_string() 
+    })
+}
+```
+
+## Architecture - Shared Handler Pattern
+MANDATORY: All business logic implemented in shared Rust library (`rust-lib/`) consumed by both platforms:
+
+```
+Tuono Web (HTTP) ──┐
+                   ├─→ Shared Rust Handlers (rust-lib/src/)
+Tauri Desktop (IPC)─┘
+```
+
+### Platform Integration
+```rust
+// ✅ Tuono usage
+Router::new().route("/api/data", get(shared_handlers::api_data_handler))
+
+// ✅ Tauri usage
+#[tauri::command]
+async fn get_api_data() -> Result<serde_json::Value, String> {
+    match shared_handlers::api_data_handler().await {
+        Ok(response) => Ok(response.0),
+        Err(_) => Err("Failed to get API data".to_string())
+    }
+}
+```
+
+### Component Consistency
+MANDATORY: Identical React components for both platforms
+- Same routing structure using React Router 7
+- Same component files in `src/routes/`
+- Same layout patterns with `RootClientLayout`
+
+## State Management Rules
+Components MUST NOT access stores directly - use hooks only:
+
+```typescript
+// ❌ FORBIDDEN
+function BadComponent() {
+  const user = userStore.getUser();
+  return <div>{user?.name}</div>;
+}
+
+// ✅ REQUIRED
+function GoodComponent() {
+  const { user } = useUser();
+  return <div>{user?.name}</div>;
+}
+```
+
+## IPC Development Standards
+- REQUIRED: Descriptive command names (`get_user_profile`, not `handle_data`)
+- REQUIRED: Consistent error handling with structured error types
+- PATTERN: Validate input → Call shared handler → Map errors
+
+```rust
+#[derive(serde::Serialize)]
+struct IpcError {
+    code: String,
+    message: String,
+    details: Option<serde_json::Value>,
+}
+
+#[tauri::command]
+async fn safe_operation(input: String) -> Result<ResponseData, IpcError> {
+    // Validation
+    if input.trim().is_empty() {
+        return Err(IpcError {
+            code: "INVALID_INPUT".to_string(),
+            message: "Input cannot be empty".to_string(),
+            details: None,
+        });
+    }
+    
+    // Call shared handler
+    match shared_handlers::process_operation(&input).await {
+        Ok(data) => Ok(data),
+        Err(e) => Err(IpcError {
+            code: "OPERATION_FAILED".to_string(),
+            message: "Failed to process operation".to_string(),
+            details: Some(serde_json::json!({ "error": e.to_string() })),
+        })
+    }
+}
+```
+
+## AI/MCP/RAG Integration
+
+### OpenAI Compatibility
+MANDATORY: All AI handlers must be OpenAI-compatible
+- Endpoint: `/v1/chat/completions`
+- Support tool calling with `tool_calls` in messages
+- Proper `ChatCompletionResponse` structure for assistant-ui/ag-ui
+
+### MCP Security Requirements
+MANDATORY: All MCP servers run in microsandbox isolation
+- Input validation and sanitization for all tool arguments
+- Resource limits and timeouts (30 seconds max)
+- Security policies based on tool trust levels
+
+```rust
+impl SecureMcpRegistry {
+    pub async fn execute_tool_call(&self, tool_call: &ToolCall) -> Result<String, McpError> {
+        // 1. Validate tool access
+        self.validate_tool_access(&tool_call.function.name)?;
+        
+        // 2. Sanitize arguments
+        let args = self.sanitize_tool_arguments(&tool_call.function.arguments)?;
+        
+        // 3. Execute in sandbox with timeout
+        tokio::time::timeout(
+            Duration::from_secs(30),
+            self.execute_in_sandbox(tool_call, args)
+        ).await.map_err(|_| McpError::ExecutionTimeout)??
+    }
+}
+```
+
+### RAG Integration
+REQUIRED: PGLite for client-side document storage and vector search
+- Context injection via system messages before AI calls
+- Document chunking with overlap for better retrieval
+- Token limits and relevance scoring
+
+## File Structure Requirements
+```
+├── rust-lib/src/          # Shared Rust handlers (MANDATORY for business logic)
+│   ├── ai.rs             # OpenAI-compatible AI handlers
+│   ├── mcp.rs            # MCP registry and secure tool execution
+│   ├── rag.rs            # RAG service with PGLite integration
+│   └── lib.rs            # Main exports and common handlers
+├── src/routes/           # React components (shared by both platforms)
+├── src/tauri-main.tsx    # Tauri React Router entry point
+├── src-tauri/src/        # Tauri-specific IPC wrappers and AI proxy
+└── .roo/rules/           # Development rules and standards
+```
+
+## Naming Conventions
+- Components: `PascalCase.tsx` (e.g., `UserProfile.tsx`)
+- Hooks: `camelCase.ts` starting with `use` (e.g., `useUser.ts`)
+- Types: `camelCase.ts` or `types.ts` (e.g., `userTypes.ts`)
+- Constants: `UPPER_SNAKE_CASE.ts` (e.g., `API_ENDPOINTS.ts`)
+
+## Pre-commit Requirements
+MANDATORY: All checks must pass before any commit:
+```bash
+pnpm run lint          # ESLint for TypeScript
+pnpm run typecheck     # TypeScript compiler check  
+pnpm run rust:check    # Cargo check for Rust code
+pnpm run test          # Run test suite
+```
+
+## Security Requirements
+- Validate all inputs at API boundaries using proper schemas
+- Use JSON schema validation for MCP tool arguments
+- Sanitize outputs from external MCP tools
+- Execute all MCP tools in microsandbox VMs with resource limits
+- Apply security policies based on tool trust levels
+- Timeout all tool calls (default: 30 seconds max)
+
+## Development Commands
+```bash
+# Web development
+pnpm dev              # Start Tuono web server (port 3000)
+pnpm build            # Build web application
+
+# Desktop development
+pnpm dev:tauri        # Start Tauri desktop development
+pnpm build:tauri      # Build desktop application
+
+# Code quality
+pnpm run lint         # ESLint
+pnpm run typecheck    # TypeScript check
+pnpm run rust:check   # Cargo check
+pnpm run test         # Test suite
+```
+
+## Error Handling Patterns
+
+### TypeScript Error Handling
+```typescript
+type Result<T> = 
+  | { success: true; data: T }
+  | { success: false; error: { code: string; message: string } };
+
+async function safeApiCall<T>(url: string): Promise<Result<T>> {
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: { 
+        code: 'API_ERROR', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      }
+    };
+  }
+}
+```
+
+### Rust Error Handling
+```rust
+#[derive(thiserror::Error, Debug)]
+pub enum ApiError {
+    #[error("Database connection failed: {0}")]
+    DatabaseError(#[from] sqlx::Error),
+    #[error("Validation failed: {field}")]
+    ValidationError { field: String },
+    #[error("Not found: {resource}")]
+    NotFound { resource: String },
+    #[error("MCP tool execution failed: {0}")]
+    McpError(#[from] McpError),
+}
+```
+
+This project follows a strict shared handler architecture where all business logic lives in Rust and is consumed by both platforms through different transport mechanisms (HTTP for web, IPC for desktop), ensuring complete consistency while maintaining platform-specific optimizations and security.

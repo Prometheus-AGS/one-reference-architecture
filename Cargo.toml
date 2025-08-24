@@ -1,0 +1,16 @@
+[package]
+name = "tuono-app"
+version = "0.0.1"
+edition = "2024"
+
+[[bin]]
+name = "tuono"
+path = "src/main.rs"
+
+[dependencies]
+tuono_lib = "0.19.7"
+serde = { version = "1.0.202", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+shared-handlers = { path = "./rust-lib" }

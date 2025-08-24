@@ -1,0 +1,458 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // ============================================
+    // BUILD TASKS
+    // ============================================
+    
+    {
+      "label": "Build All",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$tsc", "$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    
+    {
+      "label": "Build Rust",
+      "type": "cargo",
+      "command": "build",
+      "args": ["--workspace"],
+      "problemMatcher": ["$rustc"],
+      "group": "build"
+    },
+    
+    {
+      "label": "Build TypeScript",
+      "type": "npm",
+      "script": "build",
+      "problemMatcher": "$tsc",
+      "group": "build"
+    },
+    
+    {
+      "label": "Build Tauri",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["build:tauri"],
+      "problemMatcher": ["$rustc", "$tsc"],
+      "group": "build"
+    },
+    
+    {
+      "label": "Build WASM Modules",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build", "--target", "wasm32-wasi", "--release"],
+      "options": {
+        "cwd": "${workspaceFolder}/crates/sandbox"
+      },
+      "problemMatcher": "$rustc",
+      "group": "build"
+    },
+    
+    // ============================================
+    // DEV SERVER TASKS
+    // ============================================
+    
+    {
+      "label": "Start Dev Server",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["dev"],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "tuono",
+        "pattern": {
+          "regexp": "^([^\\s].*)\\((\\d+,\\d+)\\):\\s+(error|warning):\\s+(.*)$",
+          "file": 1,
+          "location": 2,
+          "severity": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Starting development server",
+          "endsPattern": "^Server running at"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    
+    {
+      "label": "Start Orchestrator",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "@code-interpreter/orchestrator", "dev"],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "orchestrator",
+        "pattern": {
+          "regexp": "^\\[(.*)\\]\\s+(ERROR|WARN):\\s+(.*)$",
+          "severity": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Starting orchestrator",
+          "endsPattern": "^Orchestrator ready"
+        }
+      }
+    },
+    
+    {
+      "label": "Start All Services",
+      "dependsOn": [
+        "Start PostgreSQL",
+        "Start Redis",
+        "Start IPFS",
+        "Start Dev Server"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    
+    // ============================================
+    // DOCKER/SERVICE TASKS
+    // ============================================
+    
+    {
+      "label": "Start PostgreSQL",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["up", "-d", "postgres"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      }
+    },
+    
+    {
+      "label": "Start Redis",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["up", "-d", "redis"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      }
+    },
+    
+    {
+      "label": "Start IPFS",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["up", "-d", "ipfs"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      }
+    },
+    
+    {
+      "label": "Stop All Services",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": ["down"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    
+    // ============================================
+    // TEST TASKS
+    // ============================================
+    
+    {
+      "label": "Test All",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": ["$tsc", "$rustc"]
+    },
+    
+    {
+      "label": "Test Rust",
+      "type": "cargo",
+      "command": "test",
+      "args": ["--workspace", "--", "--nocapture"],
+      "problemMatcher": "$rustc",
+      "group": "test"
+    },
+    
+    {
+      "label": "Test TypeScript",
+      "type": "npm",
+      "script": "test",
+      "problemMatcher": "$tsc",
+      "group": "test"
+    },
+    
+    {
+      "label": "Test Watch",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["test:watch"],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "jest",
+        "pattern": {
+          "regexp": "^\\s+(●|✕)\\s+(.*)$",
+          "message": 2
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Test Suites:",
+          "endsPattern": "^Watch Usage:"
+        }
+      }
+    },
+    
+    // ============================================
+    // LINT & FORMAT TASKS
+    // ============================================
+    
+    {
+      "label": "Lint All",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["lint"],
+      "problemMatcher": ["$eslint-stylish", "$rustc"]
+    },
+    
+    {
+      "label": "Format All",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["format"],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Cargo Clippy",
+      "type": "cargo",
+      "command": "clippy",
+      "args": ["--workspace", "--", "-W", "clippy::all"],
+      "problemMatcher": "$rustc"
+    },
+    
+    {
+      "label": "Cargo Format",
+      "type": "cargo",
+      "command": "fmt",
+      "args": ["--all"],
+      "problemMatcher": []
+    },
+    
+    // ============================================
+    // DATABASE TASKS
+    // ============================================
+    
+    {
+      "label": "Run Migrations",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["migrate:up"],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Rollback Migrations",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["migrate:down"],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Reset Database",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["db:reset"],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Seed Database",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["db:seed"],
+      "problemMatcher": []
+    },
+    
+    // ============================================
+    // CLEAN TASKS
+    // ============================================
+    
+    {
+      "label": "Clean All",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["clean"],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Clean Rust",
+      "type": "cargo",
+      "command": "clean",
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Clean Node Modules",
+      "type": "shell",
+      "command": "rm",
+      "args": ["-rf", "node_modules", "packages/*/node_modules"],
+      "problemMatcher": []
+    },
+    
+    // ============================================
+    // WASM SPECIFIC TASKS
+    // ============================================
+    
+    {
+      "label": "Compile WASM Module",
+      "type": "shell",
+      "command": "wasm-pack",
+      "args": [
+        "build",
+        "--target",
+        "nodejs",
+        "--out-dir",
+        "${workspaceFolder}/packages/sandbox-ffi/wasm",
+        "${workspaceFolder}/crates/sandbox"
+      ],
+      "problemMatcher": "$rustc"
+    },
+    
+    {
+      "label": "Test WASM Module",
+      "type": "shell",
+      "command": "wasmtime",
+      "args": [
+        "run",
+        "--dir=.",
+        "${workspaceFolder}/wasm/quickjs.wasm",
+        "--",
+        "${input:testScript}"
+      ],
+      "problemMatcher": []
+    },
+    
+    // ============================================
+    // MONITORING & DEBUGGING TASKS
+    // ============================================
+    
+    {
+      "label": "Start Prometheus",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "run",
+        "-d",
+        "-p",
+        "9090:9090",
+        "-v",
+        "${workspaceFolder}/config/prometheus.yml:/etc/prometheus/prometheus.yml",
+        "prom/prometheus"
+      ],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Start Grafana",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "run",
+        "-d",
+        "-p",
+        "3001:3000",
+        "grafana/grafana"
+      ],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "View Logs",
+      "type": "shell",
+      "command": "tail",
+      "args": ["-f", "${workspaceFolder}/logs/*.log"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    
+    // ============================================
+    // UTILITY TASKS
+    // ============================================
+    
+    {
+      "label": "Install Dependencies",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["install"],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Update Dependencies",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["update", "--interactive", "--latest"],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Check Outdated",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["outdated"],
+      "problemMatcher": []
+    },
+    
+    {
+      "label": "Generate Types",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["generate:types"],
+      "problemMatcher": "$tsc"
+    },
+    
+    {
+      "label": "Bundle Analyzer",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["analyze"],
+      "problemMatcher": []
+    }
+  ],
+  
+  "inputs": [
+    {
+      "id": "testScript",
+      "type": "promptString",
+      "description": "Path to test script",
+      "default": "test.js"
+    }
+  ]
+}

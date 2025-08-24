@@ -1,0 +1,12 @@
+# Development environment configuration
+settings:
+  vm_pool_size: 2
+  health_check_interval: 60
+  log_level: "debug"
+  hot_reload: true
+  microsandbox_enabled: false  # Will enable when ready
+
+servers:
+  filesystem:
+    security:
+      file_access: ["/tmp", "/workspace", "/Users/${USER}/projects"]

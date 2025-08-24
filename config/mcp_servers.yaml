@@ -1,0 +1,26 @@
+# MCP Server Configuration
+# This file will define MCP servers when microsandbox is implemented
+
+servers:
+  # Placeholder configurations - will be implemented later
+  filesystem:
+    description: "Local file system operations"
+    version: "1.0.0"
+    transport:
+      type: "stdio"
+    enabled: false  # Disabled until implementation
+    
+  web_search:
+    description: "Web search capabilities"  
+    version: "1.0.0"
+    transport:
+      type: "http"
+      port: 8080
+    enabled: false  # Disabled until implementation
+
+# Global settings
+settings:
+  vm_pool_size: 3
+  health_check_interval: 30
+  log_level: "info"
+  dev_mode: true

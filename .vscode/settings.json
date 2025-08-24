@@ -1,0 +1,300 @@
+{
+  // ============================================
+  // EDITOR SETTINGS
+  // ============================================
+  
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.rulers": [80, 120],
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  
+  // ============================================
+  // FILE ASSOCIATIONS
+  // ============================================
+  
+  "files.associations": {
+    "*.wasm": "wasm",
+    "*.wat": "wat",
+    ".env*": "dotenv",
+    "Cargo.toml": "toml",
+    "*.rs": "rust",
+    "*.tsx": "typescriptreact",
+    "*.jsx": "javascriptreact"
+  },
+  
+  "files.exclude": {
+    "**/target": true,
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/*.pyc": true,
+    "**/__pycache__": true,
+    "**/Cargo.lock": false
+  },
+  
+  "files.watcherExclude": {
+    "**/target/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true
+  },
+  
+  // ============================================
+  // TYPESCRIPT/JAVASCRIPT SETTINGS
+  // ============================================
+  
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.importModuleSpecifier": "shortest",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "eslint.workingDirectories": [
+    { "mode": "auto" }
+  ],
+  
+  "prettier.enable": true,
+  "prettier.requireConfig": true,
+  "prettier.configPath": ".prettierrc",
+  
+  // ============================================
+  // RUST SETTINGS
+  // ============================================
+  
+  "rust-analyzer.cargo.features": "all",
+  "rust-analyzer.checkOnSave.command": "clippy",
+  "rust-analyzer.checkOnSave.extraArgs": [
+    "--",
+    "-W",
+    "clippy::all",
+    "-W",
+    "clippy::pedantic"
+  ],
+  "rust-analyzer.inlayHints.enable": true,
+  "rust-analyzer.inlayHints.chainingHints": true,
+  "rust-analyzer.inlayHints.parameterHints": true,
+  "rust-analyzer.inlayHints.typeHints": true,
+  "rust-analyzer.lens.enable": true,
+  "rust-analyzer.lens.debug": true,
+  "rust-analyzer.lens.run": true,
+  "rust-analyzer.procMacro.enable": true,
+  "rust-analyzer.cargo.buildScripts.enable": true,
+  "rust-analyzer.diagnostics.experimental.enable": true,
+  
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.formatOnSave": true
+  },
+  
+  // ============================================
+  // DEBUGGING SETTINGS
+  // ============================================
+  
+  "debug.console.fontSize": 14,
+  "debug.console.fontFamily": "JetBrains Mono, Consolas, 'Courier New', monospace",
+  "debug.console.wordWrap": false,
+  "debug.internalConsoleOptions": "openOnSessionStart",
+  "debug.showBreakpointsInOverviewRuler": true,
+  "debug.allowBreakpointsEverywhere": true,
+  "debug.showSubSessionsInToolBar": true,
+  
+  // Rust debugging
+  "lldb.displayFormat": "auto",
+  "lldb.showDisassembly": "never",
+  "lldb.dereferencePointers": true,
+  "lldb.consoleMode": "commands",
+  
+  // Node debugging
+  "debug.javascript.autoAttachFilter": "smart",
+  "debug.javascript.codelens.npmScripts": "all",
+  "debug.javascript.terminalOptions": {
+    "skipFiles": [
+      "<node_internals>/**",
+      "node_modules/**"
+    ]
+  },
+  
+  // ============================================
+  // WASM SETTINGS
+  // ============================================
+  
+  "wasm.runtime": "wasmtime",
+  "wasm.debugInfo": true,
+  
+  // ============================================
+  // TERMINAL SETTINGS
+  // ============================================
+  
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.defaultProfile.windows": "powershell",
+  "terminal.integrated.fontFamily": "JetBrains Mono, Consolas, monospace",
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.env.linux": {
+    "RUST_LOG": "debug",
+    "RUST_BACKTRACE": "1"
+  },
+  "terminal.integrated.env.osx": {
+    "RUST_LOG": "debug",
+    "RUST_BACKTRACE": "1"
+  },
+  
+  // ============================================
+  // TAILWIND CSS
+  // ============================================
+  
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  ],
+  
+  // ============================================
+  // GIT SETTINGS
+  // ============================================
+  
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  
+  // ============================================
+  // SEARCH SETTINGS
+  // ============================================
+  
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/target": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.next": true,
+    "**/coverage": true
+  },
+  
+  // ============================================
+  // RECOMMENDED EXTENSIONS
+  // ============================================
+  
+  "extensions.ignoreRecommendations": false,
+  "recommendations": [
+    // Rust
+    "rust-lang.rust-analyzer",
+    "vadimcn.vscode-lldb",
+    "serayuzgur.crates",
+    "tamasfe.even-better-toml",
+    
+    // TypeScript/JavaScript
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "dsznajder.es7-react-js-snippets",
+    
+    // Debugging
+    "msjsdiag.debugger-for-chrome",
+    "ms-vscode.js-debug-nightly",
+    
+    // Docker
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+    
+    // Database
+    "cweijan.vscode-postgresql-client2",
+    "prisma.prisma",
+    
+    // Git
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    
+    // General
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens",
+    "gruntfuggly.todo-tree",
+    "wayou.vscode-todo-highlight",
+    "mikestead.dotenv",
+    "redhat.vscode-yaml",
+    
+    // WASM
+    "dtsvet.vscode-wasm",
+    
+    // Markdown
+    "yzhang.markdown-all-in-one",
+    "bierner.markdown-mermaid"
+  ],
+  
+  // ============================================
+  // WORKSPACE-SPECIFIC OVERRIDES
+  // ============================================
+  
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
+  },
+  "[yaml]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "keep",
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": false,
+      "strings": true
+    }
+  },
+  
+  // ============================================
+  // CUSTOM TASKS INTEGRATION
+  // ============================================
+  
+  "task.problemMatchers.neverPrompt": {
+    "shell": true
+  },
+  "task.autoDetect": "on",
+  
+  // ============================================
+  // PROJECT-SPECIFIC ENV VARS
+  // ============================================
+  
+  "launch.env": {
+    "RUST_LOG": "debug",
+    "RUST_BACKTRACE": "1",
+    "NODE_ENV": "development",
+    "DATABASE_URL": "postgresql://postgres:postgres@localhost/codeinterpreter",
+    "REDIS_URL": "redis://localhost:6379",
+    "IPFS_API_URL": "http://localhost:5001",
+    "IPFS_GATEWAY_URL": "http://localhost:8080"
+  }
+}

@@ -1,0 +1,8 @@
+packages:
+  - '.'
+  - 'rust-lib'
+
+onlyBuiltDependencies:
+  - '@swc/core'
+  - '@tailwindcss/oxide'
+  - esbuild
