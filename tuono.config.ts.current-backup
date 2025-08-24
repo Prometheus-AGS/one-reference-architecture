@@ -1,0 +1,42 @@
+import tailwindcss from '@tailwindcss/vite'
+import type { TuonoConfig } from 'tuono/config'
+import tsconfigPaths from 'vite-tsconfig-paths'
+
+// Tuono config for API-only mode (no client-side routing)
+const config: TuonoConfig = {
+    vite: {
+        plugins: [
+            tailwindcss(),
+            tsconfigPaths(),
+        ],
+        server: {
+            port: 31334, // Use port 31334 for both dev and build
+            host: 'localhost',
+            hmr: {
+                overlay: false,
+            },
+        },
+        logLevel: 'warn',
+        ssr: {
+            // Exclude PGLite and related WASM modules from SSR compilation
+            noExternal: [],
+            external: [
+                '@electric-sql/pglite',
+            ],
+        },
+        optimizeDeps: {
+            exclude: [
+                '@electric-sql/pglite',
+            ],
+        },
+    },
+    // Server config for runtime
+    server: {
+        port: 31334,
+        host: 'localhost',
+    },
+    // API-only mode: disable client-side routing
+    mode: 'api-only',
+}
+
+export default config

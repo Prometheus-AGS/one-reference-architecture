@@ -5,11 +5,11 @@
 # Node
 node_modules
 .npmrc
-pnpm-lock.yaml
+# NOTE: pnpm-lock.yaml is needed for Docker build, so NOT excluding it
 
 # Rust
 target/
-Cargo.lock
+# NOTE: Cargo.lock is needed for Docker build, so NOT excluding it
 
 # Tuono
 .tuono/

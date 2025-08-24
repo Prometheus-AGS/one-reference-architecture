@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite'
 import type { TuonoConfig } from 'tuono/config'
 import tsconfigPaths from 'vite-tsconfig-paths'
 
-// Tuono config for API-only mode (no client-side routing)
+// Tuono config for full-stack mode with static file serving
 const config: TuonoConfig = {
     vite: {
         plugins: [
@@ -10,8 +10,8 @@ const config: TuonoConfig = {
             tsconfigPaths(),
         ],
         server: {
-            port: 3001, // Different port for API server
-            host: 'localhost',
+            port: 31334, // Use port 31334 for both dev and build
+            host: '0.0.0.0', // Bind to all interfaces for external access
             hmr: {
                 overlay: false,
             },
@@ -30,8 +30,12 @@ const config: TuonoConfig = {
             ],
         },
     },
-    // API-only mode: disable client-side routing
-    mode: 'api-only',
+    // Server config for runtime
+    server: {
+        port: 31334,
+        host: '0.0.0.0', // Bind to all interfaces
+    },
+    // Remove api-only mode to enable static file serving
 }
 
 export default config

@@ -2021,11 +2021,13 @@ dependencies = [
 name = "tuono-app"
 version = "0.0.1"
 dependencies = [
+ "axum 0.8.4",
  "chrono",
  "serde",
  "serde_json",
  "shared-handlers",
  "tokio",
+ "tower-http",
  "tuono_lib",
 ]
 

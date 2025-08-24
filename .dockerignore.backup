@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+.npmrc
+pnpm-lock.yaml
+
+# Rust
+target/
+Cargo.lock
+
+# Tuono
+.tuono/
+out/
+
+# Tauri
+src-tauri/target
+build-tauri/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+Dockerfile
+docker-compose.yml
